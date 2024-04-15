@@ -39,19 +39,20 @@ public class PlayerHealth : LivingEntity {
     // 체력 회복
     public override void RestoreHealth(float newHealth) {
         // LivingEntity의 RestoreHealth() 실행 (체력 증가)
-        if (!dead)
-        {
-            playerAudioPlayer.PlayOneShot(hitClip);
-        }
-
         base.RestoreHealth(newHealth);
+
         healthSlider.value = health;
     }
 
     // 데미지 처리
     public override void OnDamage(float damage, Vector3 hitPoint, Vector3 hitDirection) {
+        if(!dead)
+        {
+            playerAudioPlayer.PlayOneShot(hitClip);
+        }
         // LivingEntity의 OnDamage() 실행(데미지 적용)
         base.OnDamage(damage, hitPoint, hitDirection);
+        healthSlider.value = health;
     }
 
     // 사망 처리
