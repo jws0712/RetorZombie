@@ -84,7 +84,7 @@ public class Gun : MonoBehaviour {
         StartCoroutine(ShotEffect(hitPosition));
 
         magAmmo--;
-        if(magAmmo < 0)
+        if(magAmmo <= 0)
         {
             state = State.Empty;
         }
