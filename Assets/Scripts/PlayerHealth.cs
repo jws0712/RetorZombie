@@ -2,6 +2,7 @@
 using Unity.Services.Analytics;
 using UnityEngine;
 using UnityEngine.UI; // UI 관련 코드
+using Photon.Pun;
 
 // 플레이어 캐릭터의 생명체로서의 동작을 담당
 public class PlayerHealth : LivingEntity {
@@ -45,6 +46,7 @@ public class PlayerHealth : LivingEntity {
     }
 
     // 데미지 처리
+    [PunRPC]
     public override void OnDamage(float damage, Vector3 hitPoint, Vector3 hitDirection) {
         if(!dead)
         {
@@ -56,6 +58,7 @@ public class PlayerHealth : LivingEntity {
     }
 
     // 사망 처리
+    [PunRPC]
     public override void Die() {
         // LivingEntity의 Die() 실행(사망 적용)
         base.Die();
@@ -75,9 +78,27 @@ public class PlayerHealth : LivingEntity {
 
             if(item != null)
             {
-                item.Use(gameObject);
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    item.Use(gameObject);
+                }
+                
                 playerAudioPlayer.PlayOneShot(itemPickupClip);
             }
         }
+    }
+    public void Reset()
+    {
+        if(photonView.IsMine)
+        {
+            Vector3 randomSpawnPos = Random.insideUnitSphere * 5;
+
+            randomSpawnPos.y = 0f;
+
+            transform.position = randomSpawnPos;
+        }
+
+        gameObject.SetActive(false);
+        gameObject.SetActive(true);
     }
 }
