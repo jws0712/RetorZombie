@@ -2,9 +2,10 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Photon.Pun;
 
 // 총을 구현
-public class Gun : MonoBehaviour {
+public class Gun : MonoBehaviourPun, IPunObservable {
     // 총의 상태를 표현하는 데 사용할 타입을 선언
     public enum State {
         Ready, // 발사 준비됨
@@ -31,6 +32,29 @@ public class Gun : MonoBehaviour {
     public int magAmmo; // 현재 탄알집에 남아 있는 탄알
 
     private float lastFireTime; // 총을 마지막으로 발사한 시점
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if(stream.IsWriting)
+        {
+            stream.SendNext(ammoRemain);
+
+            stream.SendNext(magAmmo);
+
+            stream.SendNext(state);
+        }
+        else
+        {
+            ammoRemain = (int)stream.ReceiveNext();
+            magAmmo = (int)stream.ReceiveNext();
+            state = (State)stream.ReceiveNext();
+        }
+    }
+    [PunRPC]
+    public void AddAmmo(int ammo)
+    {
+        ammoRemain += ammo;
+    }
 
     private void Awake() {
         // 사용할 컴포넌트의 참조 가져오기
@@ -83,11 +107,44 @@ public class Gun : MonoBehaviour {
 
         StartCoroutine(ShotEffect(hitPosition));
 
+        photonView.RPC("ShotProcessOnServer", RpcTarget.MasterClient);
+
         magAmmo--;
         if(magAmmo <= 0)
         {
             state = State.Empty;
         }
+    }
+
+    private void ShotProcessOnServer()
+    {
+        RaycastHit hit;
+
+        Vector3 hitPosition = Vector3.zero;
+
+        if(Physics.Raycast(fireTransform.position, fireTransform.forward, out hit, fireDistance))
+        {
+            IDamageable target = hit.collider.GetComponent<IDamageable>();
+
+            if(target != null )
+            {
+                target.OnDamage(gunData.damage, hit.point, hit.normal);
+            }
+
+            hitPosition = hit.point;
+        }
+        else
+        {
+            hitPosition = fireTransform.position + fireTransform.forward * fireDistance;
+        }
+
+        photonView.RPC("ShotProcessOnServer", RpcTarget.All, hitPosition);
+    }
+
+    [PunRPC]
+    private void ShotEffectProcessOnClients(Vector3 hitPosition)
+    {
+        StartCoroutine(ShotEffect(hitPosition));
     }
 
     // 발사 이펙트와 소리를 재생하고 탄알 궤적을 그림

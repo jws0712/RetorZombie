@@ -65,9 +65,13 @@ public class PlayerHealth : LivingEntity {
 
         healthSlider.gameObject.SetActive(false);
         playerAudioPlayer.PlayOneShot(deathClip);
+
         playerAnimator.SetTrigger("Die");
+
         playerMovement.enabled = false;
         playerShooter.enabled = false;
+
+        Invoke("Respawn", 5f);
     }
 
     private void OnTriggerEnter(Collider other) {
