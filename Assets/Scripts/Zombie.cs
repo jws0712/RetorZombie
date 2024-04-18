@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.AI; // AI, 내비게이션 시스템 관련 코드 가져오기
+using Photon.Pun;
 
 // 좀비 AI 구현
 public class Zombie : LivingEntity
@@ -46,6 +47,7 @@ public class Zombie : LivingEntity
     }
 
     // 좀비 AI의 초기 스펙을 결정하는 셋업 메서드
+    [PunRPC]
     public void Setup(ZombieData zombieData) {
         startingHealth = zombieData.health;
         health = zombieData.damage;
@@ -56,10 +58,19 @@ public class Zombie : LivingEntity
 
     private void Start() {
         // 게임 오브젝트 활성화와 동시에 AI의 추적 루틴 시작
+        if(!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
         StartCoroutine(UpdatePath());
     }
 
     private void Update() {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
         // 추적 대상의 존재 여부에 따라 다른 애니메이션 재생
         zombieAnimator.SetBool("HasTarget", hasTarget);
     }
@@ -97,6 +108,7 @@ public class Zombie : LivingEntity
     }
 
     // 데미지를 입었을 때 실행할 처리
+    [PunRPC]
     public override void OnDamage(float damage, Vector3 hitPoint, Vector3 hitNormal) {
         // LivingEntity의 OnDamage()를 실행하여 데미지 적용
         if (!dead)
